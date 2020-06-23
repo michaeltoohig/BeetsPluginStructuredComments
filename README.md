@@ -2,9 +2,10 @@
 
 # Structured Comments (Beets Plugin)
 
-This plugin is not yet built, its a placeholder.
+This plugin is not yet built and not safe to use yet!
 
 The *beets-structuredcomments* plugin lets you define a format that your media files' comments field will adhere to allowing you to ensure your media files will have the information you defined in beets available at a glance outside of beets.
+
 
 ## Basic Idea
 
@@ -29,13 +30,13 @@ structuredcomments:
 ```
 
 This configuration will likely change but provides the following:
-  - Missing fields from a media file are replaced by '-' in the comments section.
   - Individual fields can have additional configuration about how they are formatted
     - case: sets how the string is written
     - length: can limit the string length to keep consistent spacing between fields in the comments
-    - missing: defines what to place in the comments when the media file does not have that information defined
-    - append: Adds a string to the beginning of each item in the list (if $tags is a list). So when searching in DJ software I can use `#acid` to find songs I tagged with `acid` but not find any titles, artists, genres, etc that contain the string `acid` in the DJ software search.
-  - The original media file comment can remain which will cause some challenges during development
+    - missing: defines what to place when the media file does not have that information defined
+    - append: Adds a string to the beginning of each item in the list (if $tags is a list). So when searching in DJ software I can search `#acid` to find songs I tagged with `acid` but not find any titles, artists, genres, etc that contain the string `acid` in the DJ software search.
+  - The original media file comment can be added to the structured comments. This will cause some challenges during development.
+
 
 ## Installation
 
