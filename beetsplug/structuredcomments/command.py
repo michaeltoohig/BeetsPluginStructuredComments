@@ -26,6 +26,8 @@ class StructuredCommentsCommand(Subcommand):
         self.cfg_force = self.config.get('force')
         self.cfg_dry_run = self.config.get('dry-run')
         self.cfg_format = self.config.get('format')
+        self.cfg_comments_delimiter = self.config.get('delimiter')
+        self.cfg_comments_position = self.config.get('comments_position')
 
         self.parser = OptionParser(
             usage='beet {plg} [options] [QUERY...]'.format(
@@ -56,8 +58,7 @@ class StructuredCommentsCommand(Subcommand):
         super(StructuredCommentsCommand, self).__init__(
             parser=self.parser,
             name=common.plg_ns['__PLUGIN_NAME__'],
-            aliases=[common.plg_ns['__PLUGIN_ALIAS__']] if
-            common.plg_ns['__PLUGIN_ALIAS__'] else [],
+            aliases=[common.plg_ns['__PLUGIN_ALIAS__']] if common.plg_ns['__PLUGIN_ALIAS__'] else [],
             help=common.plg_ns['__PLUGIN_SHORT_DESCRIPTION__']
         )
 
@@ -88,7 +89,6 @@ class StructuredCommentsCommand(Subcommand):
             return
         
         for item in items:
-            import pdb; pdb.set_trace()
             if self.process_item(item):
                 if not self.cfg_dry_run:
                     # item.try_write()  # write to file
@@ -98,7 +98,17 @@ class StructuredCommentsCommand(Subcommand):
             
     def process_item(self, item: Item):
         self._say('Building structured comments for item: {}'.format(item), log_only=False)
-        print(self.cfg_format)
+        
+        if self.cfg_comments_position == 'end':
+            comments = item.comments.split(self.cfg_comments_delimiter)[-1]
+        elif self.cfg_comments_position == 'start':
+            comments = item.comments.split(self.cfg_comments_delimiter, 1)[0]
+        else:
+            self._say('Invalid configuration for comments position: {}'.format(self.cfg_comments_position))
+            return
+        
+        print(comments)
+
 
     def show_version_information(self):
         self._say("{pt}({pn}) plugin for Beets: v{ver}".format(
