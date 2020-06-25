@@ -11,19 +11,6 @@ from beets.util.functemplate import Template
 from beetsplug.structuredcomments.command import StructuredCommentsCommand
 
 
-class MyTemplate(Template):
-    def __init__(self, template, defaults):
-        super(MyTemplate, self).__init__(template)
-        self.defaults = defaults
-
-    def translate(self):
-        expressions, varnames, funcnames = self.expr.translate()
-
-        argnames = []
-        for varname in varnames:
-            pass
-
-
 class StructuredCommentsPlugin(BeetsPlugin):
     _default_plugin_config_file_name_ = 'config_default.yml'
 
@@ -33,13 +20,21 @@ class StructuredCommentsPlugin(BeetsPlugin):
         source = ConfigSource(load_yaml(config_file_path) or {}, config_file_path)
         self.config.add(source)
         self.register_listener('write', self.write)
+        self.register_listener('import_task_files', self._import_task_files)
 
-    def write(self, item):
+    def _import_task_files(self, session, task):
+        print('import task files')
+        # Just testing which event occurs first and I notice `scrub` plugin uses this hook
+
+    def write(self, item, path, tags):
+        comments = item.comments
+        import pdb; pdb.set_trace()
         tmpl = self.config['template'].get()
         template = Template(tmpl)
-        template.substitute(item)
-        #import pdb; pdb.set_trace()
+        new_comments = template.substitute(item, item._template_funcs())
         print('write')
+        item.comments = new_comments + ' ::: ' + comments
+        
 
     def commands(self):
         return [StructuredCommentsCommand(self.config)]
