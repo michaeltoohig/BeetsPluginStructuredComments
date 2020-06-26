@@ -28,12 +28,27 @@ class StructuredCommentsPlugin(BeetsPlugin):
 
     def write(self, item, path, tags):
         comments = item.comments
-        import pdb; pdb.set_trace()
+        delimiter = self.config['delimiter'].get()
+        position = self.config['comments_position'].get()
+
+        if position == 'end':
+            orig_comments = comments.split(delimiter)[-1].strip()
+        elif position == 'start':
+            orig_comments = comments.rsplit(delimiter)[0].strip()
+        else:
+            print('not a valid position for comments')  # TODO fetch original comments from the template position and not tacked on like this
+            return
+
         tmpl = self.config['template'].get()
         template = Template(tmpl)
+        import pdb; pdb.set_trace()
         new_comments = template.substitute(item, item._template_funcs())
         print('write')
-        item.comments = new_comments + ' ::: ' + comments
+
+        if position == 'end':
+            item.comments = '{} {} {}'.format(new_comments, delimiter, orig_comments)
+        elif position == 'start':
+            item.comments = '{} {} {}'.format(orig_comments, delimiter, new_comments)
         
 
     def commands(self):

@@ -1,4 +1,4 @@
 dry-run: no
 force: no
 comments_position: 'end'
-comments_delimiter: ':::'
+delimiter: ':::'
