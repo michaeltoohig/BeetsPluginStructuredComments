@@ -6,6 +6,7 @@ from optparse import OptionParser
 
 from beets.library import Library, Item, parse_query_string
 from beets.ui import Subcommand, decargs
+from beets.util import functemplate
 from beets.util.confit import Subview
 
 from beetsplug.structuredcomments import common
@@ -26,6 +27,8 @@ class StructuredCommentsCommand(Subcommand):
         self.cfg_force = self.config.get('force')
         self.cfg_dry_run = self.config.get('dry-run')
         self.cfg_format = self.config.get('format')
+        self.cfg_comments_delimiter = self.config.get('delimiter')
+        self.cfg_comments_position = self.config.get('comments_position')
 
         self.parser = OptionParser(
             usage='beet {plg} [options] [QUERY...]'.format(
@@ -56,8 +59,7 @@ class StructuredCommentsCommand(Subcommand):
         super(StructuredCommentsCommand, self).__init__(
             parser=self.parser,
             name=common.plg_ns['__PLUGIN_NAME__'],
-            aliases=[common.plg_ns['__PLUGIN_ALIAS__']] if
-            common.plg_ns['__PLUGIN_ALIAS__'] else [],
+            aliases=[common.plg_ns['__PLUGIN_ALIAS__']] if common.plg_ns['__PLUGIN_ALIAS__'] else [],
             help=common.plg_ns['__PLUGIN_SHORT_DESCRIPTION__']
         )
 
@@ -88,17 +90,27 @@ class StructuredCommentsCommand(Subcommand):
             return
         
         for item in items:
-            import pdb; pdb.set_trace()
             if self.process_item(item):
+                self._say('Try write', log_only=False)
                 if not self.cfg_dry_run:
-                    # item.try_write()  # write to file
-                    # item.store()      # write to database
-                    pass
-                pass
+                    with self.lib.transaction():
+                        item.store()
+            else:
+                self._say('Failed to process {}'.format(item), log_only=False)
             
     def process_item(self, item: Item):
+        # NOTE nearly same as the `write` event hook method; could both be extracted to `common.py`?
         self._say('Building structured comments for item: {}'.format(item), log_only=False)
-        print(self.cfg_format)
+        comments = item.comments
+        delimiter = self.config['delimiter']
+        orig_comments = comments.split(delimiter)[-1].strip()
+        tmpl = self.config['template']
+        template = functemplate.Template(tmpl)  # template = MyTemplate(tmpl)  # dev/exploring
+        new_comments = template.substitute(item, item._template_funcs())
+        complete_comments = '{} {} {}'.format(new_comments, delimiter, orig_comments)
+        item.update({'comments': complete_comments})
+        self._say('Result: {}'.format(item.comments), log_only=False)
+        return True
 
     def show_version_information(self):
         self._say("{pt}({pn}) plugin for Beets: v{ver}".format(

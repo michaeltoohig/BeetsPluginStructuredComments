@@ -1,2 +1,3 @@
 dry-run: no
 force: no
+delimiter: ':::'
