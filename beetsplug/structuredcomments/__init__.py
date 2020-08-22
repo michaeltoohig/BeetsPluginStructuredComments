@@ -3,12 +3,47 @@
 #  License: See LICENSE.txt
 
 import os
+import ast
 
 from beets.plugins import BeetsPlugin
 from beets.util.confit import ConfigSource, load_yaml
-from beets.util.functemplate import Template
+from beets.util import functemplate
 
 from beetsplug.structuredcomments.command import StructuredCommentsCommand
+
+
+class MyTemplate(functemplate.Template):
+    def __init__(self, template):
+        super(MyTemplate, self).__init__(template)
+        self.compiled = self.translate()
+        
+    def translate(self):
+        """Compile the template to a Python function."""
+        expressions, varnames, funcnames = self.expr.translate()
+
+        argnames = []
+        for varname in varnames:
+            argnames.append(functemplate.VARIABLE_PREFIX + varname)
+        for funcname in funcnames:
+            argnames.append(functemplate.FUNCTION_PREFIX + funcname)
+            
+        #import pdb; pdb.set_trace()
+        
+        func = functemplate.compile_func(
+            argnames,
+            [ast.Return(ast.List(expressions, ast.Load()))],
+        )
+
+        def wrapper_func(values={}, functions={}):
+            args = {}
+            for varname in varnames:
+                args[functemplate.VARIABLE_PREFIX + varname] = values[varname]
+            for funcname in funcnames:
+                args[functemplate.FUNCTION_PREFIX + funcname] = functions[funcname]
+            parts = func(**args)
+            return u''.join(parts)
+
+        return wrapper_func
 
 
 class StructuredCommentsPlugin(BeetsPlugin):
@@ -20,36 +55,17 @@ class StructuredCommentsPlugin(BeetsPlugin):
         source = ConfigSource(load_yaml(config_file_path) or {}, config_file_path)
         self.config.add(source)
         self.register_listener('write', self.write)
-        self.register_listener('import_task_files', self._import_task_files)
-
-    def _import_task_files(self, session, task):
-        print('import task files')
-        # Just testing which event occurs first and I notice `scrub` plugin uses this hook
 
     def write(self, item, path, tags):
+        # NOTE nearly same as the `process_item` method; could both be extracted to `common.py`?
         comments = item.comments
         delimiter = self.config['delimiter'].get()
-        position = self.config['comments_position'].get()
-
-        if position == 'end':
-            orig_comments = comments.split(delimiter)[-1].strip()
-        elif position == 'start':
-            orig_comments = comments.rsplit(delimiter)[0].strip()
-        else:
-            print('not a valid position for comments')  # TODO fetch original comments from the template position and not tacked on like this
-            return
-
+        orig_comments = comments.split(delimiter)[-1].strip()
         tmpl = self.config['template'].get()
-        template = Template(tmpl)
-        import pdb; pdb.set_trace()
+        template = functemplate.Template(tmpl)  # template = MyTemplate(tmpl)  # dev/exploring
         new_comments = template.substitute(item, item._template_funcs())
-        print('write')
-
-        if position == 'end':
-            item.comments = '{} {} {}'.format(new_comments, delimiter, orig_comments)
-        elif position == 'start':
-            item.comments = '{} {} {}'.format(orig_comments, delimiter, new_comments)
+        item.comments = '{} {} {}'.format(new_comments, delimiter, orig_comments)
+        #import pdb; pdb.set_trace()
         
-
     def commands(self):
         return [StructuredCommentsCommand(self.config)]

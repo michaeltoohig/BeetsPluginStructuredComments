@@ -6,6 +6,7 @@ from optparse import OptionParser
 
 from beets.library import Library, Item, parse_query_string
 from beets.ui import Subcommand, decargs
+from beets.util import functemplate
 from beets.util.confit import Subview
 
 from beetsplug.structuredcomments import common
@@ -90,25 +91,26 @@ class StructuredCommentsCommand(Subcommand):
         
         for item in items:
             if self.process_item(item):
+                self._say('Try write', log_only=False)
                 if not self.cfg_dry_run:
-                    # item.try_write()  # write to file
-                    # item.store()      # write to database
-                    pass
-                pass
+                    with self.lib.transaction():
+                        item.store()
+            else:
+                self._say('Failed to process {}'.format(item), log_only=False)
             
     def process_item(self, item: Item):
+        # NOTE nearly same as the `write` event hook method; could both be extracted to `common.py`?
         self._say('Building structured comments for item: {}'.format(item), log_only=False)
-        
-        if self.cfg_comments_position == 'end':
-            comments = item.comments.split(self.cfg_comments_delimiter)[-1]
-        elif self.cfg_comments_position == 'start':
-            comments = item.comments.split(self.cfg_comments_delimiter, 1)[0]
-        else:
-            self._say('Invalid configuration for comments position: {}'.format(self.cfg_comments_position))
-            return
-        
-        print(comments)
-
+        comments = item.comments
+        delimiter = self.config['delimiter']
+        orig_comments = comments.split(delimiter)[-1].strip()
+        tmpl = self.config['template']
+        template = functemplate.Template(tmpl)  # template = MyTemplate(tmpl)  # dev/exploring
+        new_comments = template.substitute(item, item._template_funcs())
+        complete_comments = '{} {} {}'.format(new_comments, delimiter, orig_comments)
+        item.update({'comments': complete_comments})
+        self._say('Result: {}'.format(item.comments), log_only=False)
+        return True
 
     def show_version_information(self):
         self._say("{pt}({pn}) plugin for Beets: v{ver}".format(
