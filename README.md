@@ -49,7 +49,7 @@ plugins:
   # [...]
 
 structuredcomments:
-  template: '[$ifdef{$rating,$rating,-}]:$vocal$vocal_gender:%ifdef{$context,%left{%upper{$context}, 3},---}'
+  template: '[$ifdef{rating,$rating,-}]:$vocal$vocal_gender:%ifdef{context,%left{%upper{$context}, 3},---}'
   delimiter: ':::'
 
 # inline plugin config
@@ -81,7 +81,7 @@ An example of a hypothetical `StructuredFields` plugin.
 
 ```yaml
 structured_fields:
-  comments: '[%ifdef{$rating,$rating,-}] %tags{3} :: $comments'
+  comments: '[%ifdef{rating,$rating,-}] %tags{3} :: $comments'
   title: '%title{$title}'
   artist: '%upper{$artist}'
 ```

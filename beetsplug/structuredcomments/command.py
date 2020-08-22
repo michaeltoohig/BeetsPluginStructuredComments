@@ -91,7 +91,6 @@ class StructuredCommentsCommand(Subcommand):
         
         for item in items:
             if self.process_item(item):
-                self._say('Try write', log_only=False)
                 if not self.cfg_dry_run:
                     with self.lib.transaction():
                         item.store()
