@@ -44,11 +44,16 @@ My idea is to have a unix directory like list when looking at all of my files in
 Your config file will require the following for the above example structured comments:
 
 ```yaml
+import:
+  write: yes
+  # [...]
+
 plugins:
   - inline
   # [...]
 
 structuredcomments:
+  auto: yes
   template: '[$ifdef{rating,$rating,-}]:$vocal$vocal_gender:%ifdef{context,%left{%upper{$context}, 3},---}'
   delimiter: ':::'
 
@@ -59,8 +64,6 @@ item_fields:
 ```
 
 The `deliminter` is the string that separates your actual comments field from the structured portion defined in the `template`. By default it is `:::`; however you can set it to whatever you want as long as it is an unique string that does not appear elsewhere in the comments field. For example a `delimiter` of `---` would not work since our `template` already defines `---` for songs with a missing `$context` field.  
-
-After which you may run `beet structuredcomments -f` to force the plugin to modify the comments fields in your library. The plugin also automatically modifies the comment field whenever you `modify` your songs. 
 
 The `-d` flag can be used to show you the changes structuredcomments will make before actually writing anything.
 
