@@ -17,7 +17,6 @@ def split_on_delimiter(comments, delimiter):
 
 
 class StructuredCommentsCommand(BeetsPlugin):
-    
     def __init__(self):
         super(StructuredCommentsCommand, self).__init__()
         self.config.add({
@@ -26,48 +25,42 @@ class StructuredCommentsCommand(BeetsPlugin):
             u'delimiter': ':::',
         })
 
-        self._command = ui.Subcommand(
-            'structuredcomments', 
-            help=u'structured comments for when you need beets data outside of beets'
-        )
-
-        self._command.parser.add_option(
-            u'-d', u'--dry-run', dest='dry_run',
-            action='store_true', default=None,
-            help=u'Do not write or store any changes only print the result')
-
         if self.config['auto']:
-            self.register_listener('write', self.process_item)
+            self.import_stages = [self.imported]
+            self.register_listener('write', self.write_structured_comment)
         
     def commands(self):
+        cmd = ui.Subcommand('structuredcomments',
+                            help=u'for when you need beets data outside of beets')
 
-        def func(lib, opts, args):
-            self.config.set_args(opts)
+        cmd.func = self.command
+        return [cmd]
 
-            for item in lib.items(ui.decargs(args)):
-                self.process_item(item, dry_run)
-
-        self._command.func = func
-        return [self._command]
-
-    def process_item(self, item, dry_run=False):
-        """Write the new structured comments.
-        """
-        delimiter = self.config['delimiter'].get(str)
+    def command(self, lib, opts, args):
+        items = lib.items(ui.decargs(args))
         dry_run = self.config['dry_run'].get(bool)
         write = ui.should_write()
-
-        sc, comments = split_on_delimiter(item.comments, delimiter) 
+        for item in items:
+            if dry_run:
+                self._log.info(self.build_structured_comment(itm))
+            else:
+                self.write_structured_comment(item, write)
         
+    def imported(self, session, task):
+        for item in task.imported_items():
+            self.write_structured_comment(item)
+
+    def build_structured_comment(self, item):
+        delimiter = self.config['delimiter'].get(str)
+        sc, comments = split_on_delimiter(item.comments, delimiter) 
         tmpl = self.config['template'].get()
         template = util.functemplate.Template(tmpl)
         new_sc = template.substitute(item, item._template_funcs())
-        
-        complete_comments = u'{} {} {}'.format(new_sc, delimiter, comments)
-        if dry_run:
-            self._log.info(u'{0} -> {1}'.format(util.displayable_path(item.path), complete_comments))
-        else:
-            item.update({'comments': complete_comments})
-            if write:
-                item.try_write()
-            item.store()
+        return u'{} {} {}'.format(new_sc, delimiter, comments)
+
+    def write_structured_comment(self, item, write=False):
+        complete_comments = self.build_structured_comment(item)
+        item.update({'comments': complete_comments})
+        if write:
+            item.try_write()
+        item.store()
