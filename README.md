@@ -11,6 +11,10 @@ The *beets-structuredcomments* plugin lets you define a format that your media f
 
 I found when taking my beets library to DJ with software such as ReckordBox I want to know the information I defined such as `context` or `rating` but obviously those are not available in music tags. I believe I can override the comments field with more details and therefore have some of that information outside of beets itself.
 
+### Use with Rekordbox
+
+Be sure after re-importing your music into record box to select everything then right-click and choose "Reload Tags" before the changes you've made will appear in Rekordbox.
+
 ## Installation
 
 You can try cloning this repo yourself, but this repo may not yet safe to use on your library as it is under devloplment. So only use if you have a backup and understand what you are doing, which if you are instlling this from the repo you probably are fine.
@@ -97,9 +101,5 @@ If you have a feature request please use the Issue tracker.
 In any other situation please use the Issue tracker.
 
 
-## Acknowledgements
-Many thanks to the developer of the [beets-template](https://github.com/adamjakab/BeetsPluginTemplate) for the Beets Plugin skeleton.
-
-
 ## Final Remarks
-This plugin is still in development and not yet safe for use; although I am using it now.
+This plugin is use as-is and be sure to have a backup of your library before using yourself.
