@@ -1,6 +1,0 @@
-prune test
-include LICENSE.txt
-include README.md
-include beetsplug/structuredcomments/about.py
-include beetsplug/structuredcomments/config_default.yml
-

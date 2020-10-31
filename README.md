@@ -17,7 +17,7 @@ Be sure after re-importing your music into record box to select everything then 
 
 ## Installation
 
-You can try cloning this repo yourself, but this repo may not yet safe to use on your library as it is under devloplment. So only use if you have a backup and understand what you are doing, which if you are instlling this from the repo you probably are fine.
+You can try cloning this repo yourself, but this repo may not yet safe to use on your library as it is under devloplment. So only use if you have a backup and understand what you are doing, which if you are installing this from the repo you probably are fine.
 
 ## Usage
 Activate the plugin in your configuration file:
@@ -71,6 +71,8 @@ The `deliminter` is the string that separates your actual comments field from th
 
 The `-d` flag can be used to show you the changes structuredcomments will make before actually writing anything.
 
+The `-f` flag can be used to force the plugin to overwrite the existing comments field even if the field is the same.
+
 ## Future Development
 
 1. I would like to remove the requirement of a delimiter or be smart enough not to mess anything up if two delimiters were present.
@@ -103,3 +105,11 @@ In any other situation please use the Issue tracker.
 
 ## Final Remarks
 This plugin is use as-is and be sure to have a backup of your library before using yourself.
+
+
+## Changelog
+
+2020 Oct 31
+  - Added flag for `force` to overwrite a field even if current comments field is identical. This improves performance since we don't have to write to every file when we update structured comments.
+  - Fixed flag for `dry_run` so it actually prints the dry run.
+  - Added more logging to terminal so you can see what it's doing and see the current progress.

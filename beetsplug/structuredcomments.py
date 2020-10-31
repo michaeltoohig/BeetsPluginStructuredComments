@@ -21,7 +21,6 @@ class StructuredCommentsCommand(BeetsPlugin):
         super(StructuredCommentsCommand, self).__init__()
         self.config.add({
             u'auto': False,
-            u'dry_run': False,
             u'delimiter': ':::',
         })
 
@@ -33,22 +32,36 @@ class StructuredCommentsCommand(BeetsPlugin):
         cmd = ui.Subcommand('structuredcomments',
                             help=u'for when you need beets data outside of beets')
 
+        cmd.parser.add_option(
+            u'-d', u'--dry-run', dest="dry_run",
+            action="store_true", default=False,
+            help=u'Print changes without writing to files'
+        )
+        cmd.parser.add_option(
+            u'-f', u'--force', dest="force",
+            action="store_true", default=False,
+            help=u'Rewrite tags to file even if they are the same'
+        )
+        # XXX not sure how to ensure we come back to the next 100 if we do batch of 100, maybe a skip arg
+        # cmd.parser.add_option(
+        #     u'-b', u'--batch', dest="batch",
+        #     action="store", default=None,
+        #     help=u'Write comments in batches instead of all at once'
+        # )
         cmd.func = self.command
         return [cmd]
 
     def command(self, lib, opts, args):
-        items = lib.items(ui.decargs(args))
-        dry_run = self.config['dry_run'].get(bool)
         write = ui.should_write()
-        for item in items:
-            if dry_run:
-                self._log.info(self.build_structured_comment(itm))
-            else:
-                self.write_structured_comment(item, write)
-        
-    def imported(self, session, task):
-        for item in task.imported_items():
-            self.write_structured_comment(item)
+        items = lib.items(ui.decargs(args))
+        total_items = len(items)
+        for num, item in enumerate(items):
+            self._log.info(u'{0}/{1} {2}', num+1, total_items, util.displayable_path(item.path))
+            new_comments = self.build_structured_comment(item)
+            self._log.info(u'{0}', new_comments)
+            if not opts.dry_run:
+                if new_comments != item.comments or opts.force:
+                    self.write_structured_comment(item, new_comments, write)
 
     def build_structured_comment(self, item):
         delimiter = self.config['delimiter'].get(str)
@@ -57,10 +70,16 @@ class StructuredCommentsCommand(BeetsPlugin):
         template = util.functemplate.Template(tmpl)
         new_sc = template.substitute(item, item._template_funcs())
         return u'{} {} {}'.format(new_sc, delimiter, comments)
+        
+    def imported(self, session, task):
+        for item in task.imported_items():
+            new_comments = self.build_structured_comment(item)
+            self.write_structured_comment(item, new_comments)
 
-    def write_structured_comment(self, item, write=False):
-        complete_comments = self.build_structured_comment(item)
-        item.update({'comments': complete_comments})
+    def write_structured_comment(self, item, new_comments=None, write=False):
+        if not new_comments:
+            new_comments = self.build_structured_comment(item)
+        item.update({'comments': new_comments})
         if write:
             item.try_write()
         item.store()
